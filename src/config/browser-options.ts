@@ -33,7 +33,7 @@ export const browserOptions = {
   wsEndpoint: {
     type: 'string',
     description:
-      'WebSocket endpoint to connect to a running Chrome instance (e.g., ws://127.0.0.1:9222/devtools/browser/<id>). Alternative to --browserUrl.',
+      'WebSocket endpoint to connect to a running browser (ws://, wss://, or ws+unix:///absolute/path/to/socket:/ for a Unix-domain socket). Alternative to --browserUrl.',
     alias: 'w',
     coerce: (url: string | undefined) => {
       if (!url) {
@@ -41,14 +41,22 @@ export const browserOptions = {
       }
       try {
         const parsed = new URL(url);
-        if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') {
+        if (!['ws:', 'wss:', 'ws+unix:'].includes(parsed.protocol)) {
           throw new Error(
-            `Provided wsEndpoint ${url} must use ws:// or wss:// protocol.`,
+            `Provided wsEndpoint ${url} must use ws://, wss:// or ws+unix:// protocol.`,
+          );
+        }
+        if (
+          parsed.protocol === 'ws+unix:' &&
+          (parsed.host !== '' || !/^\/[^:]+:\//.test(parsed.pathname))
+        ) {
+          throw new Error(
+            `Provided wsEndpoint ${url} must contain an absolute Unix socket path followed by :/.`,
           );
         }
         return url;
       } catch (error) {
-        if ((error as Error).message.includes('ws://')) {
+        if ((error as Error).message.startsWith('Provided wsEndpoint')) {
           throw error;
         }
         throw new Error(`Provided wsEndpoint ${url} is not valid URL.`);

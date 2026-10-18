@@ -345,6 +345,25 @@ describe('cli args parsing', () => {
     });
   });
 
+  it('parses wsEndpoint with ws+unix:// transport', async () => {
+    const args = parseConfig([
+      '--wsEndpoint',
+      'ws+unix:///tmp/lightpanda.sock:/',
+    ]);
+    assert.strictEqual(args.wsEndpoint, 'ws+unix:///tmp/lightpanda.sock:/');
+  });
+
+  it('rejects malformed ws+unix:// endpoints', async () => {
+    assert.throws(
+      () => parseConfig(['--wsEndpoint', 'ws+unix:///tmp/lightpanda.sock']),
+      /absolute Unix socket path followed by/,
+    );
+    assert.throws(
+      () => parseConfig(['--wsEndpoint', 'ws+unix://relative.sock:/']),
+      /absolute Unix socket path followed by/,
+    );
+  });
+
   it('parses wsHeaders with valid JSON', async () => {
     const args = parseConfig([
       '--wsEndpoint',
